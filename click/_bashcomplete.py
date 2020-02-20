@@ -94,7 +94,7 @@ async def resolve_ctx(cli, prog_name, args):
     ctx = await cli.make_context(prog_name, args, resilient_parsing=True)
     args = ctx.protected_args + ctx.args
     while args:
-        if isinstance(ctx.command, MultiCommand):
+        if isinstance(ctx.command, MultiCommand) or issubclass(ctx.command.__class__, MultiCommand):
             if not ctx.command.chain:
                 cmd_name, cmd, args = await ctx.command.resolve_command(ctx, args)
                 if cmd is None:
@@ -207,14 +207,14 @@ def get_visible_commands_starting_with(ctx, starts_with):
 
 def add_subcommand_completions(ctx, incomplete, completions_out):
     # Add subcommand completions.
-    if isinstance(ctx.command, MultiCommand):
+    if isinstance(ctx.command, MultiCommand) or issubclass(ctx.command.__class__, MultiCommand):
         completions_out.extend(
             [(c.name, c.get_short_help_str()) for c in get_visible_commands_starting_with(ctx, incomplete)])
 
     # Walk up the context list and add any other completion possibilities from chained commands
     while ctx.parent is not None:
         ctx = ctx.parent
-        if isinstance(ctx.command, MultiCommand) and ctx.command.chain:
+        if (isinstance(ctx.command, MultiCommand) or issubclass(ctx.command.__class__, MultiCommand)) and ctx.command.chain:
             remaining_commands = [c for c in get_visible_commands_starting_with(ctx, incomplete)
                                   if c.name not in ctx.protected_args]
             completions_out.extend([(c.name, c.get_short_help_str()) for c in remaining_commands])
